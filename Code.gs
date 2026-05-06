@@ -3,7 +3,7 @@
 
 const SHEET        = "chore_entries";
 const CONFIG_SHEET = "config";
-const COLS  = ["id","user_id","kid_id","task_key","task_name","amount_eur","sessions","status","created_at","approved_at"];
+const COLS  = ["id","user_id","kid_id","task_key","task_name","amount_eur","game_minutes","status","created_at","approved_at"];
 
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

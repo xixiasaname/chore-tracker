@@ -135,8 +135,8 @@ input[type=password]:focus{border-color:#FFB700;}
   </div>
   <div class="wrap">
     <div class="stats-row two">
-      <div class="stat-card"><div class="stat-label">⏳ Pending</div><div class="stat-val" id="kid-pending" style="color:#FF6B6B">€0.00</div></div>
-      <div class="stat-card"><div class="stat-label">✅ Approved</div><div class="stat-val" id="kid-approved" style="color:#3DBE8A">€0.00</div></div>
+      <div class="stat-card"><div class="stat-label">⏳ Awaiting Approval</div><div class="stat-val" id="kid-count" style="color:#FF6B6B">0</div><div class="stat-unit">pending</div></div>
+      <div class="stat-card"><div class="stat-label">✅ Total Earned</div><div class="stat-val" id="kid-approved" style="color:#3DBE8A">€0.00</div></div>
     </div>
     <div class="card">
       <div class="section-title">What did you do? 🌟</div>
@@ -166,16 +166,16 @@ input[type=password]:focus{border-color:#FFB700;}
     </div>
     <div class="card" id="chart-card" style="display:none">
       <div class="section-title">📊 Earnings Overview</div>
-      <div class="chart-wrap">
-        <div class="chart-box">
-          <div class="chart-title">By Task</div>
-          <svg id="pie-task" width="140" height="140" viewBox="-70 -70 140 140" style="overflow:visible"></svg>
-          <div class="legend" id="legend-task"></div>
+      <div class="stats-row two">
+        <div class="stat-card" style="border-left:4px solid #4A7ADB">
+          <div class="stat-label">🎮 Game Time</div>
+          <div class="stat-val" id="ov-game" style="color:#4A7ADB">0</div>
+          <div class="stat-unit">minutes earned</div>
         </div>
-        <div class="chart-box">
-          <div class="chart-title">By Kid</div>
-          <svg id="pie-kid" width="140" height="140" viewBox="-70 -70 140 140" style="overflow:visible"></svg>
-          <div class="legend" id="legend-kid"></div>
+        <div class="stat-card" style="border-left:4px solid #3DBE8A">
+          <div class="stat-label">💰 Money</div>
+          <div class="stat-val" id="ov-money" style="color:#3DBE8A">€0.00</div>
+          <div class="stat-unit">euros earned</div>
         </div>
       </div>
     </div>
@@ -224,13 +224,13 @@ const DEFAULT_CFG = {
     {id:"kid_g", name:"Kid G", emoji:"🦛", password:"YOUR_KID_G_PASSWORD"}
   ],
   tasks: [
-    {key:"dishes",  name:"Washing Dishes",      emoji:"🍽️", amount:1,    sessions:2},
-    {key:"clothes", name:"Sorting Clothes",      emoji:"👕", amount:1,    sessions:2},
-    {key:"floor",   name:"Wiping Floor",         emoji:"🧹", amount:0.5,  sessions:1},
-    {key:"cooking", name:"Cooking",              emoji:"👨‍🍳", amount:0.5,  sessions:1},
-    {key:"bonus",   name:"Assistance Bonus",     emoji:"⭐", amount:0.25, sessions:1},
-    {key:"plants",  name:"Looking After Plants", emoji:"🌱", amount:0.5,  sessions:1},
-    {key:"chinese", name:"学习中文",              emoji:"📚", amount:0,    sessions:2}
+    {key:"dishes",  name:"Washing Dishes",      emoji:"🍽️", amount:1,    game_minutes:30},
+    {key:"clothes", name:"Sorting Clothes",      emoji:"👕", amount:1,    game_minutes:30},
+    {key:"floor",   name:"Wiping Floor",         emoji:"🧹", amount:0.5,  game_minutes:15},
+    {key:"cooking", name:"Cooking",              emoji:"👨‍🍳", amount:0.5,  game_minutes:15},
+    {key:"bonus",   name:"Assistance Bonus",     emoji:"⭐", amount:0.25, game_minutes:10},
+    {key:"plants",  name:"Looking After Plants", emoji:"🌱", amount:0.5,  game_minutes:15},
+    {key:"chinese", name:"学习中文",              emoji:"📚", amount:0,    game_minutes:30}
   ]
 };
 
@@ -242,8 +242,8 @@ setInterval(() => S.now = Date.now(), 10000);
 
 // ── API ──────────────────────────────────────────────────────────────────────
 async function api(params) {
-  const url = CONFIG.scriptUrl + "?" + new URLSearchParams(params);
-  const r = await fetch(url, { redirect: "follow" });
+  const url = CONFIG.scriptUrl + "?" + new URLSearchParams({ ...params, _t: Date.now() });
+  const r = await fetch(url, { redirect: "follow", cache: "no-store" });
   if (!r.ok) throw new Error("Network error");
   return r.json();
 }
@@ -293,10 +293,10 @@ function esc(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
-function taskFor(key) { return CFG.tasks.find(t => t.key === key) || {emoji:"📝", sessions:1, amount:0, name:key}; }
+function taskFor(key) { return CFG.tasks.find(t => t.key === key) || {emoji:"📝", game_minutes:15, amount:0, name:key}; }
 
-function sessionBadge(n) {
-  return n ? `<span class="session-badge">🎮 ${n} game session${n > 1 ? "s" : ""}</span>` : "";
+function gameBadge(n) {
+  return n ? `<span class="session-badge">🎮 ${n} min</span>` : "";
 }
 
 function sum(arr, status) {
@@ -362,7 +362,7 @@ function showKid() {
       <div class="task-emoji">${t.emoji}</div>
       <div class="task-name">${esc(t.name)}</div>
       ${t.amount > 0 ? `<div class="task-amt">+€${t.amount.toFixed(2)}</div>` : ""}
-      <div class="task-sessions">${t.sessions} game session${t.sessions > 1 ? "s" : ""}</div>
+      ${t.game_minutes > 0 ? `<div class="task-sessions">🎮 ${t.game_minutes} min</div>` : ""}
     </button>`
   ).join("");
   loadKid();
@@ -372,20 +372,20 @@ function showKid() {
 async function addTask(key, name, amount) {
   const t = taskFor(key);
   const entry = {
-    id:          crypto.randomUUID(),
-    user_id:     S.role,
-    kid_id:      S.role,
-    task_key:    key,
-    task_name:   name,
-    amount_eur:  amount,
-    sessions:    t.sessions,
-    status:      "pending",
-    created_at:  new Date().toISOString(),
-    approved_at: ""
+    id:           crypto.randomUUID(),
+    user_id:      S.role,
+    kid_id:       S.role,
+    task_key:     key,
+    task_name:    name,
+    amount_eur:   amount,
+    game_minutes: t.game_minutes,
+    status:       "pending",
+    created_at:   new Date().toISOString(),
+    approved_at:  ""
   };
   try {
     await api({ action: "add", data: JSON.stringify(entry) });
-    toast(`Added: ${name}${amount > 0 ? " +€" + amount.toFixed(2) : ""} (${t.sessions} session${t.sessions > 1 ? "s" : ""})`);
+    toast(`Added: ${name}${amount > 0 ? " +€" + amount.toFixed(2) : ""}${t.game_minutes > 0 ? " 🎮 " + t.game_minutes + " min" : ""}`);
     loadKid();
   } catch (e) { toast("Error: " + e.message, "err"); }
 }
@@ -395,7 +395,7 @@ async function loadKid() {
   try {
     const data = (await api({ action: "get", user_id: S.role }))
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    document.getElementById("kid-pending").textContent  = "€" + sum(data, "pending").toFixed(2);
+    document.getElementById("kid-count").textContent    = data.filter(e => e.status === "pending").length;
     document.getElementById("kid-approved").textContent = "€" + sum(data, "approved").toFixed(2);
     if (!data.length) {
       el.innerHTML = '<div class="empty-msg">No entries yet — go do some chores! 💪</div>'; return;
@@ -411,7 +411,7 @@ async function loadKid() {
         </div>
         <div class="entry-right">
           ${+e.amount_eur > 0 ? `<div class="entry-amt">€${(+e.amount_eur).toFixed(2)}</div>` : ""}
-          ${sessionBadge(t.sessions)}
+          ${gameBadge(t.game_minutes)}
           <span class="badge ${e.status}">${e.status === "approved" ? "✅ Approved" : "⏳ Pending"}</span>
         </div>
         ${canDel ? `<button class="btn-del" onclick="delEntry('${e.id}')" title="Delete within 5 min">✕</button>` : ""}
@@ -434,8 +434,8 @@ function renderParentTabs() {
     CFG.kids.map((k, i) =>
       `<button class="tab-btn${i === 0 ? " active" : ""}" id="tab-${k.id}" onclick="setTab('${k.id}')">${k.emoji} ${esc(k.name)}</button>`
     ).join("") +
-    `<button class="tab-btn" id="tab-both" onclick="setTab('both')">👀 Both</button>`;
-  S.tab = CFG.kids[0]?.id || "both";
+    `<button class="tab-btn" id="tab-all" onclick="setTab('all')">👀 All</button>`;
+  S.tab = CFG.kids[0]?.id || "all";
 }
 
 function setTab(t) {
@@ -444,8 +444,8 @@ function setTab(t) {
     const el = document.getElementById("tab-" + k.id);
     if (el) el.classList.toggle("active", k.id === t);
   });
-  const both = document.getElementById("tab-both");
-  if (both) both.classList.toggle("active", t === "both");
+  const all_tab = document.getElementById("tab-all");
+  if (all_tab) all_tab.classList.toggle("active", t === "all");
   loadParent();
 }
 
@@ -470,7 +470,7 @@ async function loadParent() {
   el.innerHTML = '<div class="empty-msg">Loading…</div>';
   try {
     const all  = (await api({ action: "get" })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const view = S.tab === "both" ? all : all.filter(e => e.kid_id === S.tab);
+    const view = S.tab === "all" ? all : all.filter(e => e.kid_id === S.tab);
     document.getElementById("p-pending").textContent = all.filter(e => e.status === "pending").length;
     document.getElementById("p-owed").textContent    = "€" + sum(all, "approved").toFixed(2);
     document.getElementById("p-total").textContent   = all.length;
@@ -492,7 +492,7 @@ async function loadParent() {
         </div>
         <div class="entry-right" style="margin-right:8px">
           ${+e.amount_eur > 0 ? `<div class="entry-amt">€${(+e.amount_eur).toFixed(2)}</div>` : ""}
-          ${sessionBadge(t.sessions)}
+          ${gameBadge(t.game_minutes)}
           <span class="badge ${e.status}">${e.status === "approved" ? "✅ Approved" : "⏳ Pending"}</span>
         </div>
         <div class="action-btns">
@@ -509,34 +509,11 @@ function buildCharts(entries) {
   const card = document.getElementById("chart-card");
   if (!entries.length) { card.style.display = "none"; return; }
   card.style.display = "block";
-  const byTask = {};
-  entries.forEach(e => { byTask[e.task_name] = (byTask[e.task_name] || 0) + +e.amount_eur; });
-  drawPie("pie-task", "legend-task", Object.entries(byTask).map(([n, v]) => ({n, v})));
-  const kidData = CFG.kids.map(k => ({
-    n: `${k.emoji} ${k.name}`,
-    v: sum(entries.filter(e => e.kid_id === k.id), "approved") + sum(entries.filter(e => e.kid_id === k.id), "pending")
-  })).filter(d => d.v > 0);
-  drawPie("pie-kid", "legend-kid", kidData);
-}
-
-function drawPie(svgId, legId, data) {
-  const svg = document.getElementById(svgId), leg = document.getElementById(legId);
-  if (!data.length) { svg.innerHTML = ""; leg.innerHTML = ""; return; }
-  const tot = data.reduce((s, d) => s + d.v, 0);
-  const R = 60;
-  let ang = -Math.PI / 2, paths = "";
-  data.forEach((d, i) => {
-    const sw = (d.v / tot) * 2 * Math.PI;
-    const x1 = R * Math.cos(ang), y1 = R * Math.sin(ang);
-    ang += sw;
-    const x2 = R * Math.cos(ang), y2 = R * Math.sin(ang);
-    paths += `<path d="M0,0 L${x1},${y1} A${R},${R} 0 ${sw > Math.PI ? 1 : 0},1 ${x2},${y2} Z"
-      fill="${COLORS[i % COLORS.length]}" stroke="#fff" stroke-width="2"/>`;
-  });
-  svg.innerHTML = paths;
-  leg.innerHTML = data.map((d, i) =>
-    `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i % COLORS.length]}"></div><span>${esc(d.n)} (€${d.v.toFixed(2)})</span></div>`
-  ).join("");
+  const approved = entries.filter(e => e.status === "approved");
+  const totalMins  = approved.reduce((s, e) => s + (+e.game_minutes || 0), 0);
+  const totalMoney = approved.reduce((s, e) => s + (+e.amount_eur   || 0), 0);
+  document.getElementById("ov-game").textContent  = totalMins;
+  document.getElementById("ov-money").textContent = "€" + totalMoney.toFixed(2);
 }
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
@@ -638,7 +615,7 @@ function renderAdminTasks() {
         <div class="admin-emoji">${t.emoji}</div>
         <div class="admin-info">
           <div class="admin-name">${esc(t.name)}</div>
-          <div class="admin-detail">€${t.amount.toFixed(2)} · ${t.sessions} session${t.sessions > 1 ? "s" : ""}</div>
+          <div class="admin-detail">€${t.amount.toFixed(2)} · ${t.game_minutes} min game time</div>
         </div>
         <button class="btn-sm edit" onclick="editTask(${i})">Edit</button>
         <button class="btn-sm danger" onclick="deleteTask(${i})">Delete</button>
@@ -666,8 +643,8 @@ function showTaskForm(task, idx) {
           <input class="finput" id="f-task-amount" type="number" min="0" step="0.25" value="${task ? task.amount : "0.50"}"/>
         </div>
         <div>
-          <div class="flabel">Game Sessions</div>
-          <input class="finput" id="f-task-sessions" type="number" min="1" step="1" value="${task ? task.sessions : "1"}"/>
+          <div class="flabel">Game Time (min)</div>
+          <input class="finput" id="f-task-game-minutes" type="number" min="0" step="5" value="${task ? task.game_minutes : "15"}"/>
         </div>
       </div>
       <div class="frow">
@@ -689,13 +666,13 @@ async function saveTask() {
   const emoji    = document.getElementById("f-task-emoji").value.trim();
   const name     = document.getElementById("f-task-name").value.trim();
   const amount   = parseFloat(document.getElementById("f-task-amount").value) || 0;
-  const sessions = parseInt(document.getElementById("f-task-sessions").value) || 1;
+  const game_minutes = parseInt(document.getElementById("f-task-game-minutes").value) || 0;
   if (!emoji || !name) { toast("Fill all fields", "err"); return; }
   if (_editTaskIdx !== null) {
-    CFG.tasks[_editTaskIdx] = { ...CFG.tasks[_editTaskIdx], emoji, name, amount, sessions };
+    CFG.tasks[_editTaskIdx] = { ...CFG.tasks[_editTaskIdx], emoji, name, amount, game_minutes };
   } else {
     const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Date.now();
-    CFG.tasks.push({ key, name, emoji, amount, sessions });
+    CFG.tasks.push({ key, name, emoji, amount, game_minutes });
   }
   try { await persistConfig(); toast("Saved ✓ (Sheets synced)"); }
   catch(e) { toast("Saved locally — Sheets sync failed, redeploy Apps Script", "err"); }
