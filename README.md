@@ -39,6 +39,9 @@ Open `index.html` directly in a browser — no build step or server needed.
 - **Admin panel** (parent only): add/rename/delete kids and tasks, set passwords and emoji icons
 - **Google Sheets sync**: all data and config stored in your own spreadsheet; works across devices
 
+- <img width="1870" height="919" alt="image" src="https://github.com/user-attachments/assets/9b531a92-474d-44f8-bb1e-fb8541e0af1d" />
+
+
 ## Notes
 
 - Passwords are stored in plain text (suitable for a trusted family context, not for public accounts)
