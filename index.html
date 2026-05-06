@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chore Coins 🏠</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#FFF8EE;font-family:Arial,sans-serif;color:#2A2A2A;min-height:100vh;}
+.screen{display:none;}.screen.active{display:block;}
+.topbar{background:linear-gradient(135deg,#FFB700,#FF8C42);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(255,183,0,0.3);}
+.topbar-title{font-size:24px;font-weight:900;color:#fff;}
+.topbar-sub{font-size:12px;color:rgba(255,255,255,0.85);margin-top:2px;}
+.btn-logout{background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.card{background:#fff;border-radius:18px;padding:22px;box-shadow:0 4px 20px rgba(0,0,0,0.07);border:1px solid #F0E8DA;margin-bottom:16px;}
+.wrap{max-width:600px;margin:0 auto;padding:20px 16px;}
+#login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:#FFF8EE;}
+.login-hero{text-align:center;margin-bottom:32px;}
+.login-hero .icon{font-size:52px;margin-bottom:8px;}
+.login-hero h1{font-size:36px;font-weight:900;color:#FFB700;}
+.login-hero p{color:#888;margin-top:8px;font-size:15px;}
+.login-card{background:#fff;border-radius:20px;padding:24px;box-shadow:0 4px 24px rgba(0,0,0,0.08);border:1px solid #F0E8DA;width:100%;max-width:400px;}
+.who-label{font-weight:700;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+.account-btns{display:flex;gap:10px;margin-bottom:20px;}
+.account-btn{flex:1;padding:16px 8px;border-radius:14px;border:2px solid #F0E8DA;background:#fff;cursor:pointer;text-align:center;transition:all 0.15s;font-family:inherit;}
+.account-btn.selected{border-color:#FFB700;background:#FFF8E1;}
+.acc-emoji{font-size:30px;}
+.acc-name{font-weight:700;font-size:13px;margin-top:6px;}
+.pw-section{display:none;}.pw-section.visible{display:block;}
+.pw-label{font-weight:700;font-size:14px;margin-bottom:8px;}
+input[type=password]{width:100%;padding:12px 14px;border-radius:10px;border:2px solid #F0E8DA;font-size:16px;font-family:inherit;background:#FFF8EE;outline:none;transition:border 0.15s;}
+input[type=password]:focus{border-color:#FFB700;}
+.err-msg{color:#FF6B6B;font-size:13px;font-weight:600;margin-top:8px;display:none;}
+.btn-login{width:100%;margin-top:14px;padding:14px;background:#FFB700;border:none;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;font-family:inherit;transition:opacity 0.15s;}
+.btn-login:disabled{opacity:0.5;cursor:not-allowed;}
+.stats-row{display:grid;gap:12px;margin-bottom:20px;}
+.stats-row.two{grid-template-columns:1fr 1fr;}
+.stats-row.three{grid-template-columns:1fr 1fr 1fr;}
+.stat-card{background:#fff;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #F0E8DA;}
+.stat-label{font-size:12px;color:#888;font-weight:700;margin-bottom:4px;}
+.stat-val{font-size:26px;font-weight:900;}
+.stat-unit{font-size:11px;color:#888;margin-top:2px;}
+.task-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+.task-btn{background:linear-gradient(135deg,#FFF8E1,#FFF3CD);border:2px solid #F0E8DA;border-radius:16px;padding:18px 12px;cursor:pointer;text-align:center;font-family:inherit;transition:transform 0.15s;}
+.task-btn:hover{transform:scale(1.04);}
+.task-emoji{font-size:34px;}
+.task-name{font-weight:700;font-size:13px;margin-top:8px;}
+.task-amt{display:inline-block;margin-top:6px;background:#FFB700;border-radius:20px;padding:2px 12px;font-weight:800;font-size:13px;}
+.task-sessions{font-size:11px;color:#4A7ADB;font-weight:700;margin-top:4px;}
+.entry{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;margin-bottom:8px;}
+.entry.pending{background:#FFF8F8;border:1px solid #FFE0E0;}
+.entry.approved{background:#F0FBF5;border:1px solid #C8EDD9;}
+.entry-emoji{font-size:22px;flex-shrink:0;}
+.entry-info{flex:1;}
+.entry-name{font-weight:700;font-size:14px;}
+.entry-time{color:#888;font-size:12px;margin-top:2px;}
+.entry-right{text-align:right;flex-shrink:0;}
+.entry-amt{font-weight:800;color:#3DBE8A;margin-bottom:4px;}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.pending{background:#FFF0F0;color:#FF6B6B;border:1px solid #FF6B6B;}
+.badge.approved{background:#E8F8F1;color:#3DBE8A;border:1px solid #3DBE8A;}
+.btn-del{background:none;border:none;cursor:pointer;font-size:17px;color:#bbb;padding:4px;flex-shrink:0;}
+.empty-msg{text-align:center;color:#888;padding:28px 0;}
+.tab-bar{display:flex;gap:4px;background:#FFF8EE;border-radius:12px;padding:4px;margin-bottom:18px;}
+.tab-btn{flex:1;padding:10px;border-radius:10px;border:none;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:transparent;color:#888;transition:all 0.15s;}
+.tab-btn.active{background:#FFB700;color:#2A2A2A;}
+.action-btns{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.btn-approve{background:#3DBE8A;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;}
+.btn-delete{background:#F5F5F5;color:#888;border:none;border-radius:10px;padding:7px 14px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;}
+.kid-tag{margin-left:8px;font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;}
+.chart-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
+.chart-box{text-align:center;}
+.chart-title{font-size:13px;font-weight:700;color:#888;margin-bottom:8px;}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:32px;font-weight:700;font-size:14px;box-shadow:0 4px 24px rgba(0,0,0,0.2);z-index:9999;display:none;white-space:nowrap;color:#fff;}
+.info-box{background:#F0F7FF;border:1px solid #BFD9F7;border-radius:12px;padding:12px 16px;font-size:13px;color:#5A7FA8;margin-top:4px;}
+.section-title{font-size:19px;font-weight:900;margin-bottom:14px;}
+.session-badge{display:inline-block;background:linear-gradient(135deg,#E8F0FF,#D4E4FF);color:#4A7ADB;border:1px solid #B8D0FF;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;margin-top:4px;}
+.btn-settings{background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;}
+.admin-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#FFF8EE;border-radius:12px;margin-bottom:8px;border:1px solid #F0E8DA;}
+.admin-emoji{font-size:24px;width:34px;text-align:center;flex-shrink:0;}
+.admin-info{flex:1;min-width:0;}
+.admin-name{font-weight:700;font-size:14px;}
+.admin-detail{font-size:12px;color:#888;margin-top:2px;}
+.btn-sm{border:none;border-radius:8px;padding:5px 12px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0;}
+.btn-sm.edit{background:#E8F0FF;color:#4A7ADB;}
+.btn-sm.danger{background:#FFF0F0;color:#FF6B6B;}
+.admin-form{background:#FFF8EE;border:2px dashed #FFB700;border-radius:14px;padding:16px;margin:8px 0 12px;}
+.frow{display:grid;gap:8px;margin-bottom:10px;}
+.frow.cols2{grid-template-columns:1fr 1fr;}
+.frow.cols3{grid-template-columns:1fr 1fr 1fr;}
+.flabel{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.finput{width:100%;padding:9px 11px;border-radius:8px;border:2px solid #F0E8DA;font-size:14px;font-family:inherit;background:#fff;outline:none;}
+.finput:focus{border-color:#FFB700;}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;}
+.btn-save{background:#FFB700;color:#2A2A2A;border:none;border-radius:10px;padding:8px 20px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;}
+.btn-cancel2{background:#F5F5F5;color:#888;border:none;border-radius:10px;padding:8px 14px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;}
+.btn-add-new{width:100%;margin-top:6px;padding:10px;background:linear-gradient(135deg,#FFF8E1,#FFF3CD);border:2px dashed #FFB700;border-radius:12px;font-family:inherit;font-weight:700;font-size:14px;color:#B8860B;cursor:pointer;}
+.btn-add-new:hover{background:#FFF3CD;}
+.loading-dots{color:#888;text-align:center;padding:16px;font-size:14px;}
+.emoji-row{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px;}
+.emoji-preview{font-size:38px;line-height:1;width:56px;height:52px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #F0E8DA;border-radius:10px;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────────────────── -->
+<div id="login-screen" class="screen active">
+  <div class="login-hero">
+    <div class="icon">🏠</div>
+    <h1>Chore Coins</h1>
+    <p>Do chores. Earn coins. Get paid! 💰</p>
+  </div>
+  <div class="login-card">
+    <div class="who-label">Who are you?</div>
+    <div class="account-btns" id="account-btns">
+      <div class="loading-dots">Loading…</div>
+    </div>
+    <div class="pw-section" id="pw-section">
+      <div class="pw-label" id="pw-label">Password</div>
+      <input type="password" id="pw-input" placeholder="Enter password…" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <div class="err-msg" id="err-msg"></div>
+      <button class="btn-login" id="btn-login" onclick="doLogin()">Enter →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── KID SCREEN ─────────────────────────────────────────────────────────── -->
+<div id="kid-screen" class="screen">
+  <div class="topbar">
+    <div><div class="topbar-title">🏠 Chore Coins</div><div class="topbar-sub" id="kid-sub"></div></div>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+  <div class="wrap">
+    <div class="stats-row two">
+      <div class="stat-card"><div class="stat-label">⏳ Pending</div><div class="stat-val" id="kid-pending" style="color:#FF6B6B">€0.00</div></div>
+      <div class="stat-card"><div class="stat-label">✅ Approved</div><div class="stat-val" id="kid-approved" style="color:#3DBE8A">€0.00</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">What did you do? 🌟</div>
+      <div class="task-grid" id="task-grid"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">My Log 📋</div>
+      <div id="kid-entries"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PARENT SCREEN ──────────────────────────────────────────────────────── -->
+<div id="parent-screen" class="screen">
+  <div class="topbar">
+    <div><div class="topbar-title">🏠 Chore Coins</div><div class="topbar-sub" id="parent-sub"></div></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-settings" onclick="showAdmin()">⚙️ Admin</button>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="wrap" style="max-width:700px">
+    <div class="stats-row three">
+      <div class="stat-card"><div class="stat-label">⏳ Pending</div><div class="stat-val" id="p-pending" style="color:#FF6B6B">0</div><div class="stat-unit">tasks</div></div>
+      <div class="stat-card"><div class="stat-label">✅ Total Owed</div><div class="stat-val" id="p-owed" style="color:#3DBE8A">€0</div><div class="stat-unit">approved</div></div>
+      <div class="stat-card"><div class="stat-label">📋 All Entries</div><div class="stat-val" id="p-total" style="color:#5BAEDC">0</div><div class="stat-unit">tasks</div></div>
+    </div>
+    <div class="card" id="chart-card" style="display:none">
+      <div class="section-title">📊 Earnings Overview</div>
+      <div class="chart-wrap">
+        <div class="chart-box">
+          <div class="chart-title">By Task</div>
+          <svg id="pie-task" width="140" height="140" viewBox="-70 -70 140 140" style="overflow:visible"></svg>
+          <div class="legend" id="legend-task"></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">By Kid</div>
+          <svg id="pie-kid" width="140" height="140" viewBox="-70 -70 140 140" style="overflow:visible"></svg>
+          <div class="legend" id="legend-kid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tab-bar" id="tab-bar"></div>
+      <div id="parent-entries"></div>
+    </div>
+    <div class="info-box">📊 <strong>Data syncs via Google Sheets</strong> — approve on any device in real time.</div>
+  </div>
+</div>
+
+<!-- ── ADMIN ────────────────────────────────────────────────────────────────── -->
+<div id="admin-screen" class="screen">
+  <div class="topbar">
+    <div><div class="topbar-title">⚙️ Admin</div><div class="topbar-sub">Manage kids &amp; tasks</div></div>
+    <button class="btn-logout" onclick="show('parent-screen')">← Back</button>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="section-title">👶 Kids</div>
+      <div id="admin-kids"></div>
+      <button class="btn-add-new" onclick="showKidForm()">+ Add Kid</button>
+    </div>
+    <div class="card">
+      <div class="section-title">📋 Tasks</div>
+      <div id="admin-tasks"></div>
+      <button class="btn-add-new" onclick="showTaskForm()">+ Add Task</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG — fill these in before using ─────────────────────────────────────
+// scriptUrl: Apps Script → Deploy → Copy the /exec URL
+// parentPassword: choose your own password for the Parent login
+const CONFIG = {
+  scriptUrl:      "YOUR_APPS_SCRIPT_EXEC_URL",
+  parentPassword: "YOUR_PARENT_PASSWORD"
+};
+
+const DEFAULT_CFG = {
+  kids: [
+    {id:"kid_a", name:"Kid A", emoji:"🐯", password:"YOUR_KID_A_PASSWORD"},
+    {id:"kid_g", name:"Kid G", emoji:"🦛", password:"YOUR_KID_G_PASSWORD"}
+  ],
+  tasks: [
+    {key:"dishes",  name:"Washing Dishes",      emoji:"🍽️", amount:1,    sessions:2},
+    {key:"clothes", name:"Sorting Clothes",      emoji:"👕", amount:1,    sessions:2},
+    {key:"floor",   name:"Wiping Floor",         emoji:"🧹", amount:0.5,  sessions:1},
+    {key:"cooking", name:"Cooking",              emoji:"👨‍🍳", amount:0.5,  sessions:1},
+    {key:"bonus",   name:"Assistance Bonus",     emoji:"⭐", amount:0.25, sessions:1},
+    {key:"plants",  name:"Looking After Plants", emoji:"🌱", amount:0.5,  sessions:1},
+    {key:"chinese", name:"学习中文",              emoji:"📚", amount:0,    sessions:2}
+  ]
+};
+
+let CFG = JSON.parse(JSON.stringify(DEFAULT_CFG));
+const COLORS     = ["#FFB700","#3DBE8A","#FF6B6B","#5BAEDC","#A78BFA","#F97316"];
+const KID_COLORS = ["#FFF3CD","#E8F0FF","#F0FFE8","#FFE8F8","#FFF0E8","#E8F8FF"];
+let S = { role: null, selAcc: null, now: Date.now(), tab: null };
+setInterval(() => S.now = Date.now(), 10000);
+
+// ── API ──────────────────────────────────────────────────────────────────────
+async function api(params) {
+  const url = CONFIG.scriptUrl + "?" + new URLSearchParams(params);
+  const r = await fetch(url, { redirect: "follow" });
+  if (!r.ok) throw new Error("Network error");
+  return r.json();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function initApp() {
+  // 1. try Google Sheets (source of truth for multi-device)
+  try {
+    const saved = await api({ action: "getConfig" });
+    if (saved && saved.kids && saved.tasks) {
+      CFG = saved;
+      localStorage.setItem("choreCfg", JSON.stringify(CFG));
+    } else {
+      throw new Error("no config in Sheets");
+    }
+  } catch(e) {
+    // 2. fall back to localStorage (survives reloads even when Sheets is unavailable)
+    const local = localStorage.getItem("choreCfg");
+    if (local) {
+      try { CFG = JSON.parse(local); } catch(_) {}
+    }
+    // 3. final fallback: DEFAULT_CFG (already set at top)
+  }
+  renderLogin();
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function toast(msg, type = "ok") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.background = type === "err" ? "#FF6B6B" : "#3DBE8A";
+  t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 3000);
+}
+
+function fmt(d) {
+  const dt = new Date(d);
+  return dt.toLocaleDateString() + " " + dt.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function taskFor(key) { return CFG.tasks.find(t => t.key === key) || {emoji:"📝", sessions:1, amount:0, name:key}; }
+
+function sessionBadge(n) {
+  return n ? `<span class="session-badge">🎮 ${n} game session${n > 1 ? "s" : ""}</span>` : "";
+}
+
+function sum(arr, status) {
+  return arr.filter(e => e.status === status).reduce((s, e) => s + +e.amount_eur, 0);
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function renderLogin() {
+  document.getElementById("account-btns").innerHTML = [
+    ...CFG.kids.map(k =>
+      `<button class="account-btn" onclick="selectAccount(this,'${k.id}','${esc(k.name)}','${esc(k.emoji)}')">
+        <div class="acc-emoji">${k.emoji}</div><div class="acc-name">${esc(k.name)}</div>
+      </button>`
+    ),
+    `<button class="account-btn" onclick="selectAccount(this,'parent','Parent','👑')">
+      <div class="acc-emoji">👑</div><div class="acc-name">Parent</div>
+    </button>`
+  ].join("");
+}
+
+function selectAccount(btn, role, name, emoji) {
+  S.selAcc = { role, name, emoji };
+  document.querySelectorAll(".account-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  document.getElementById("pw-label").textContent = `Password for ${name} ${emoji}`;
+  document.getElementById("pw-input").value = "";
+  document.getElementById("err-msg").style.display = "none";
+  document.getElementById("pw-section").classList.add("visible");
+  document.getElementById("btn-login").textContent = `Enter as ${name} →`;
+  document.getElementById("pw-input").focus();
+}
+
+function doLogin() {
+  const a = S.selAcc, pw = document.getElementById("pw-input").value;
+  if (!a || !pw) return;
+  const kid = CFG.kids.find(k => k.id === a.role);
+  const expected = a.role === "parent" ? CONFIG.parentPassword : (kid ? kid.password : null);
+  if (pw !== expected) {
+    const em = document.getElementById("err-msg");
+    em.textContent = "⚠️ Wrong password";
+    em.style.display = "block";
+    return;
+  }
+  S.role = a.role;
+  S.role === "parent" ? showParent() : showKid();
+}
+
+function logout() {
+  S = { role: null, selAcc: null, now: Date.now(), tab: null };
+  document.getElementById("pw-section").classList.remove("visible");
+  document.getElementById("pw-input").value = "";
+  document.querySelectorAll(".account-btn").forEach(b => b.classList.remove("selected"));
+  show("login-screen");
+}
+
+// ── KID VIEW ─────────────────────────────────────────────────────────────────
+function showKid() {
+  const kid = CFG.kids.find(k => k.id === S.role) || {name:"Kid", emoji:"👤"};
+  document.getElementById("kid-sub").textContent =
+    `${kid.emoji} ${kid.name} • ${new Date().toLocaleString("default", {month:"long", year:"numeric"})}`;
+  document.getElementById("task-grid").innerHTML = CFG.tasks.map(t =>
+    `<button class="task-btn" onclick="addTask('${esc(t.key)}','${esc(t.name)}',${t.amount})">
+      <div class="task-emoji">${t.emoji}</div>
+      <div class="task-name">${esc(t.name)}</div>
+      ${t.amount > 0 ? `<div class="task-amt">+€${t.amount.toFixed(2)}</div>` : ""}
+      <div class="task-sessions">${t.sessions} game session${t.sessions > 1 ? "s" : ""}</div>
+    </button>`
+  ).join("");
+  loadKid();
+  show("kid-screen");
+}
+
+async function addTask(key, name, amount) {
+  const t = taskFor(key);
+  const entry = {
+    id:          crypto.randomUUID(),
+    user_id:     S.role,
+    kid_id:      S.role,
+    task_key:    key,
+    task_name:   name,
+    amount_eur:  amount,
+    sessions:    t.sessions,
+    status:      "pending",
+    created_at:  new Date().toISOString(),
+    approved_at: ""
+  };
+  try {
+    await api({ action: "add", data: JSON.stringify(entry) });
+    toast(`Added: ${name}${amount > 0 ? " +€" + amount.toFixed(2) : ""} (${t.sessions} session${t.sessions > 1 ? "s" : ""})`);
+    loadKid();
+  } catch (e) { toast("Error: " + e.message, "err"); }
+}
+
+async function loadKid() {
+  const el = document.getElementById("kid-entries");
+  try {
+    const data = (await api({ action: "get", user_id: S.role }))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    document.getElementById("kid-pending").textContent  = "€" + sum(data, "pending").toFixed(2);
+    document.getElementById("kid-approved").textContent = "€" + sum(data, "approved").toFixed(2);
+    if (!data.length) {
+      el.innerHTML = '<div class="empty-msg">No entries yet — go do some chores! 💪</div>'; return;
+    }
+    el.innerHTML = data.map(e => {
+      const t = taskFor(e.task_key);
+      const canDel = (S.now - new Date(e.created_at).getTime()) < 5 * 60 * 1000 && e.status === "pending";
+      return `<div class="entry ${e.status}">
+        <div class="entry-emoji">${t.emoji}</div>
+        <div class="entry-info">
+          <div class="entry-name">${esc(e.task_name)}</div>
+          <div class="entry-time">${fmt(e.created_at)}</div>
+        </div>
+        <div class="entry-right">
+          ${+e.amount_eur > 0 ? `<div class="entry-amt">€${(+e.amount_eur).toFixed(2)}</div>` : ""}
+          ${sessionBadge(t.sessions)}
+          <span class="badge ${e.status}">${e.status === "approved" ? "✅ Approved" : "⏳ Pending"}</span>
+        </div>
+        ${canDel ? `<button class="btn-del" onclick="delEntry('${e.id}')" title="Delete within 5 min">✕</button>` : ""}
+      </div>`;
+    }).join("");
+  } catch (e) { el.innerHTML = '<div class="empty-msg" style="color:red">Error loading</div>'; }
+}
+
+// ── PARENT VIEW ───────────────────────────────────────────────────────────────
+function showParent() {
+  document.getElementById("parent-sub").textContent =
+    `👑 Parent Dashboard • ${new Date().toLocaleString("default", {month:"long", year:"numeric"})}`;
+  renderParentTabs();
+  loadParent();
+  show("parent-screen");
+}
+
+function renderParentTabs() {
+  document.getElementById("tab-bar").innerHTML =
+    CFG.kids.map((k, i) =>
+      `<button class="tab-btn${i === 0 ? " active" : ""}" id="tab-${k.id}" onclick="setTab('${k.id}')">${k.emoji} ${esc(k.name)}</button>`
+    ).join("") +
+    `<button class="tab-btn" id="tab-both" onclick="setTab('both')">👀 Both</button>`;
+  S.tab = CFG.kids[0]?.id || "both";
+}
+
+function setTab(t) {
+  S.tab = t;
+  CFG.kids.forEach(k => {
+    const el = document.getElementById("tab-" + k.id);
+    if (el) el.classList.toggle("active", k.id === t);
+  });
+  const both = document.getElementById("tab-both");
+  if (both) both.classList.toggle("active", t === "both");
+  loadParent();
+}
+
+async function approveEntry(id) {
+  try {
+    await api({ action: "approve", id });
+    toast("Approved! ✅");
+    loadParent();
+  } catch (e) { toast("Error", "err"); }
+}
+
+async function delEntry(id) {
+  try {
+    await api({ action: "delete", id });
+    toast("Deleted ✓");
+    S.role === "parent" ? loadParent() : loadKid();
+  } catch (e) { toast("Can't delete", "err"); }
+}
+
+async function loadParent() {
+  const el = document.getElementById("parent-entries");
+  el.innerHTML = '<div class="empty-msg">Loading…</div>';
+  try {
+    const all  = (await api({ action: "get" })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const view = S.tab === "both" ? all : all.filter(e => e.kid_id === S.tab);
+    document.getElementById("p-pending").textContent = all.filter(e => e.status === "pending").length;
+    document.getElementById("p-owed").textContent    = "€" + sum(all, "approved").toFixed(2);
+    document.getElementById("p-total").textContent   = all.length;
+    buildCharts(all);
+    if (!view.length) { el.innerHTML = '<div class="empty-msg">No entries yet.</div>'; return; }
+    el.innerHTML = view.map(e => {
+      const t      = taskFor(e.task_key);
+      const kidIdx = CFG.kids.findIndex(k => k.id === e.kid_id);
+      const kidObj = kidIdx >= 0 ? CFG.kids[kidIdx] : null;
+      const bg     = KID_COLORS[kidIdx] || "#F5F5F5";
+      const kidLabel = kidObj ? `${kidObj.emoji} ${esc(kidObj.name)}` : esc(e.kid_id);
+      return `<div class="entry ${e.status}">
+        <div class="entry-emoji">${t.emoji}</div>
+        <div class="entry-info">
+          <div class="entry-name">${esc(e.task_name)}
+            <span class="kid-tag" style="background:${bg}">${kidLabel}</span>
+          </div>
+          <div class="entry-time">${fmt(e.created_at)}</div>
+        </div>
+        <div class="entry-right" style="margin-right:8px">
+          ${+e.amount_eur > 0 ? `<div class="entry-amt">€${(+e.amount_eur).toFixed(2)}</div>` : ""}
+          ${sessionBadge(t.sessions)}
+          <span class="badge ${e.status}">${e.status === "approved" ? "✅ Approved" : "⏳ Pending"}</span>
+        </div>
+        <div class="action-btns">
+          ${e.status === "pending" ? `<button class="btn-approve" onclick="approveEntry('${e.id}')">✓ Approve</button>` : ""}
+          <button class="btn-delete" onclick="delEntry('${e.id}')">Delete</button>
+        </div>
+      </div>`;
+    }).join("");
+  } catch (e) { el.innerHTML = `<div class="empty-msg" style="color:red">Error: ${e.message}</div>`; }
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+function buildCharts(entries) {
+  const card = document.getElementById("chart-card");
+  if (!entries.length) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  const byTask = {};
+  entries.forEach(e => { byTask[e.task_name] = (byTask[e.task_name] || 0) + +e.amount_eur; });
+  drawPie("pie-task", "legend-task", Object.entries(byTask).map(([n, v]) => ({n, v})));
+  const kidData = CFG.kids.map(k => ({
+    n: `${k.emoji} ${k.name}`,
+    v: sum(entries.filter(e => e.kid_id === k.id), "approved") + sum(entries.filter(e => e.kid_id === k.id), "pending")
+  })).filter(d => d.v > 0);
+  drawPie("pie-kid", "legend-kid", kidData);
+}
+
+function drawPie(svgId, legId, data) {
+  const svg = document.getElementById(svgId), leg = document.getElementById(legId);
+  if (!data.length) { svg.innerHTML = ""; leg.innerHTML = ""; return; }
+  const tot = data.reduce((s, d) => s + d.v, 0);
+  const R = 60;
+  let ang = -Math.PI / 2, paths = "";
+  data.forEach((d, i) => {
+    const sw = (d.v / tot) * 2 * Math.PI;
+    const x1 = R * Math.cos(ang), y1 = R * Math.sin(ang);
+    ang += sw;
+    const x2 = R * Math.cos(ang), y2 = R * Math.sin(ang);
+    paths += `<path d="M0,0 L${x1},${y1} A${R},${R} 0 ${sw > Math.PI ? 1 : 0},1 ${x2},${y2} Z"
+      fill="${COLORS[i % COLORS.length]}" stroke="#fff" stroke-width="2"/>`;
+  });
+  svg.innerHTML = paths;
+  leg.innerHTML = data.map((d, i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i % COLORS.length]}"></div><span>${esc(d.n)} (€${d.v.toFixed(2)})</span></div>`
+  ).join("");
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+let _editKidIdx = null, _editTaskIdx = null;
+
+function showAdmin() {
+  renderAdminKids();
+  renderAdminTasks();
+  show("admin-screen");
+}
+
+async function persistConfig() {
+  // always save locally first so changes survive reloads regardless of Sheets
+  localStorage.setItem("choreCfg", JSON.stringify(CFG));
+  // then push to Sheets; throw if it didn't actually save
+  const res = await api({ action: "saveConfig", config: JSON.stringify(CFG) });
+  if (!res || !res.ok) throw new Error(res?.error || "Sheets did not confirm save");
+}
+
+// Kids management
+function renderAdminKids() {
+  document.getElementById("admin-kids").innerHTML =
+    CFG.kids.map((k, i) => `
+      <div class="admin-item">
+        <div class="admin-emoji">${k.emoji}</div>
+        <div class="admin-info">
+          <div class="admin-name">${esc(k.name)}</div>
+          <div class="admin-detail">Password: ${esc(k.password)}</div>
+        </div>
+        <button class="btn-sm edit" onclick="editKid(${i})">Edit</button>
+        ${CFG.kids.length > 1 ? `<button class="btn-sm danger" onclick="deleteKid(${i})">Delete</button>` : ""}
+      </div>`
+    ).join("") + `<div id="kid-form-area"></div>`;
+}
+
+function showKidForm(kid, idx) {
+  _editKidIdx = idx !== undefined ? idx : null;
+  document.getElementById("kid-form-area").innerHTML = `
+    <div class="admin-form">
+      <div class="emoji-row">
+        <div class="emoji-preview" id="f-kid-emoji-preview">${kid ? kid.emoji : "?"}</div>
+        <div style="flex:1">
+          <div class="flabel">Emoji — paste or type</div>
+          <input class="finput" id="f-kid-emoji" type="text" value="${kid ? esc(kid.emoji) : ""}"
+            placeholder="e.g. 🐯"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            oninput="document.getElementById('f-kid-emoji-preview').textContent=this.value.trim()||'?'"/>
+        </div>
+      </div>
+      <div class="frow cols2">
+        <div>
+          <div class="flabel">Name</div>
+          <input class="finput" id="f-kid-name" type="text" value="${kid ? esc(kid.name) : ""}" placeholder="Kid A"/>
+        </div>
+        <div>
+          <div class="flabel">Password</div>
+          <input class="finput" id="f-kid-pw" type="text" value="${kid ? esc(kid.password) : ""}" placeholder="password123"/>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel2" onclick="renderAdminKids()">Cancel</button>
+        <button class="btn-save" onclick="saveKid()">Save</button>
+      </div>
+    </div>`;
+}
+
+function editKid(i) { showKidForm(CFG.kids[i], i); }
+
+async function saveKid() {
+  const emoji = document.getElementById("f-kid-emoji").value.trim();
+  const name  = document.getElementById("f-kid-name").value.trim();
+  const pw    = document.getElementById("f-kid-pw").value.trim();
+  if (!emoji || !name || !pw) { toast("Fill all fields", "err"); return; }
+  if (_editKidIdx !== null) {
+    CFG.kids[_editKidIdx] = { ...CFG.kids[_editKidIdx], emoji, name, password: pw };
+  } else {
+    CFG.kids.push({ id: "kid_" + Date.now(), name, emoji, password: pw });
+  }
+  try { await persistConfig(); toast("Saved ✓ (Sheets synced)"); }
+  catch(e) { toast("Saved locally — Sheets sync failed, redeploy Apps Script", "err"); }
+  renderAdminKids();
+  renderLogin();
+}
+
+async function deleteKid(i) {
+  if (!confirm(`Delete ${CFG.kids[i].name}? Their entry history will remain.`)) return;
+  CFG.kids.splice(i, 1);
+  try { await persistConfig(); toast("Deleted (Sheets synced)"); }
+  catch(e) { toast("Deleted locally — Sheets sync failed, redeploy Apps Script", "err"); }
+  renderAdminKids();
+  renderLogin();
+}
+
+// Tasks management
+function renderAdminTasks() {
+  document.getElementById("admin-tasks").innerHTML =
+    CFG.tasks.map((t, i) => `
+      <div class="admin-item">
+        <div class="admin-emoji">${t.emoji}</div>
+        <div class="admin-info">
+          <div class="admin-name">${esc(t.name)}</div>
+          <div class="admin-detail">€${t.amount.toFixed(2)} · ${t.sessions} session${t.sessions > 1 ? "s" : ""}</div>
+        </div>
+        <button class="btn-sm edit" onclick="editTask(${i})">Edit</button>
+        <button class="btn-sm danger" onclick="deleteTask(${i})">Delete</button>
+      </div>`
+    ).join("") + `<div id="task-form-area"></div>`;
+}
+
+function showTaskForm(task, idx) {
+  _editTaskIdx = idx !== undefined ? idx : null;
+  document.getElementById("task-form-area").innerHTML = `
+    <div class="admin-form">
+      <div class="emoji-row">
+        <div class="emoji-preview" id="f-task-emoji-preview">${task ? task.emoji : "?"}</div>
+        <div style="flex:1">
+          <div class="flabel">Emoji — paste or type</div>
+          <input class="finput" id="f-task-emoji" type="text" value="${task ? esc(task.emoji) : ""}"
+            placeholder="e.g. 🍽️"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            oninput="document.getElementById('f-task-emoji-preview').textContent=this.value.trim()||'?'"/>
+        </div>
+      </div>
+      <div class="frow cols2">
+        <div>
+          <div class="flabel">Amount (€)</div>
+          <input class="finput" id="f-task-amount" type="number" min="0" step="0.25" value="${task ? task.amount : "0.50"}"/>
+        </div>
+        <div>
+          <div class="flabel">Game Sessions</div>
+          <input class="finput" id="f-task-sessions" type="number" min="1" step="1" value="${task ? task.sessions : "1"}"/>
+        </div>
+      </div>
+      <div class="frow">
+        <div>
+          <div class="flabel">Task Name</div>
+          <input class="finput" id="f-task-name" type="text" value="${task ? esc(task.name) : ""}" placeholder="Washing Dishes"/>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel2" onclick="renderAdminTasks()">Cancel</button>
+        <button class="btn-save" onclick="saveTask()">Save</button>
+      </div>
+    </div>`;
+}
+
+function editTask(i) { showTaskForm(CFG.tasks[i], i); }
+
+async function saveTask() {
+  const emoji    = document.getElementById("f-task-emoji").value.trim();
+  const name     = document.getElementById("f-task-name").value.trim();
+  const amount   = parseFloat(document.getElementById("f-task-amount").value) || 0;
+  const sessions = parseInt(document.getElementById("f-task-sessions").value) || 1;
+  if (!emoji || !name) { toast("Fill all fields", "err"); return; }
+  if (_editTaskIdx !== null) {
+    CFG.tasks[_editTaskIdx] = { ...CFG.tasks[_editTaskIdx], emoji, name, amount, sessions };
+  } else {
+    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Date.now();
+    CFG.tasks.push({ key, name, emoji, amount, sessions });
+  }
+  try { await persistConfig(); toast("Saved ✓ (Sheets synced)"); }
+  catch(e) { toast("Saved locally — Sheets sync failed, redeploy Apps Script", "err"); }
+  renderAdminTasks();
+}
+
+async function deleteTask(i) {
+  if (!confirm(`Delete task "${CFG.tasks[i].name}"?`)) return;
+  CFG.tasks.splice(i, 1);
+  try { await persistConfig(); toast("Deleted (Sheets synced)"); }
+  catch(e) { toast("Deleted locally — Sheets sync failed, redeploy Apps Script", "err"); }
+  renderAdminTasks();
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+initApp();
+</script>
+</body>
+</html>
