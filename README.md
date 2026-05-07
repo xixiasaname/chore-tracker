@@ -13,7 +13,7 @@ The `index.html` in this repo uses a placeholder. Add your own URL locally.
 A real problem in my household — my kids needed motivation for chores beyond "because I said so." 
 Built in a weekend as a portfolio piece during my career transition into sustainable fintech.
 
-# Chore Coins 🏠
+# 🏠 Chore Coins 
 
 A simple family chore tracker. Kids log completed chores, parents approve them, earnings are tracked. Backed by Google Sheets — no server needed.
 专为家庭设计的家务追踪应用。孩子完成家务后记录任务，家长审批并发放零花钱和游戏时间奖励。
