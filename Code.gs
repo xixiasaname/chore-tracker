@@ -163,8 +163,29 @@ function doGet(e) {
         break;
       }
     }
-    gs.appendRow([kidId, goalName, goalAmount, carryover, "active", new Date().toISOString()]);
-    return respond({ ok: true, carryover });
+    const surplus     = Math.max(0, carryover - goalAmount);
+    const newSavedAmt = Math.min(carryover, goalAmount);
+    gs.appendRow([kidId, goalName, goalAmount, newSavedAmt, "active", new Date().toISOString()]);
+    if (surplus > 0) {
+      getTransactionsSheet().appendRow([kidId, "surplus_return", surplus, new Date().toISOString()]);
+    }
+    return respond({ ok: true, carryover, surplus });
+  }
+
+  if (action === "cashoutGoal") {
+    const kidId = e.parameter.kid_id;
+    const gs    = getGoalsSheet();
+    const rows  = gs.getLastRow() > 1
+      ? gs.getRange(2, 1, gs.getLastRow() - 1, GOAL_COLS.length).getValues() : [];
+    for (let i = 0; i < rows.length; i++) {
+      const g = rowToGoal(rows[i]);
+      if (g.kid_id === kidId && g.status === "active") {
+        gs.getRange(i + 2, GOAL_COLS.indexOf("status") + 1).setValue("paid_out");
+        getTransactionsSheet().appendRow([kidId, "cashout_goal", parseFloat(g.saved_amount) || 0, new Date().toISOString()]);
+        return respond({ ok: true });
+      }
+    }
+    return respond({ error: "No active goal" });
   }
 
   if (action === "saveAmount") {

@@ -251,13 +251,11 @@ const DEFAULT_CFG = {
     {id:"kid_g", name:"Kid G", emoji:"🦛", password:"YOUR_KID_G_PASSWORD"}
   ],
   tasks: [
-    {key:"dishes",  name:"Washing Dishes",      emoji:"🍽️", amount:1,    game_minutes:30},
-    {key:"clothes", name:"Sorting Clothes",      emoji:"👕", amount:1,    game_minutes:30},
-    {key:"floor",   name:"Wiping Floor",         emoji:"🧹", amount:0.5,  game_minutes:15},
-    {key:"cooking", name:"Cooking",              emoji:"👨‍🍳", amount:0.5,  game_minutes:15},
-    {key:"bonus",   name:"Assistance Bonus",     emoji:"⭐", amount:0.25, game_minutes:10},
-    {key:"plants",  name:"Looking After Plants", emoji:"🌱", amount:0.5,  game_minutes:15},
-    {key:"chinese", name:"学习中文",              emoji:"📚", amount:0,    game_minutes:30}
+    {key:"dishes",  name:"Wash Dishes",      emoji:"🍽️", amount:1,   game_minutes:30},
+    {key:"clothes", name:"Sort Clothes",      emoji:"👕", amount:1,   game_minutes:30},
+    {key:"floor",   name:"Wipe Floor",        emoji:"🧹", amount:0.5, game_minutes:15},
+    {key:"cooking", name:"Cook",              emoji:"👨‍🍳", amount:0.5, game_minutes:15},
+    {key:"plants",  name:"Look After Plants", emoji:"🌱", amount:0.5, game_minutes:15}
   ]
 };
 
@@ -472,7 +470,9 @@ function renderGoalSection(approvedMoney, approvedMinutes) {
   const txns       = GOAL_DATA.transactions || [];
   const spent      = txns.filter(t => t.type === "save" || t.type === "cashout_money")
                          .reduce((s, t) => s + (+t.amount || 0), 0);
-  const availMoney = Math.max(0, approvedMoney - spent);
+  const returned   = txns.filter(t => t.type === "surplus_return")
+                         .reduce((s, t) => s + (+t.amount || 0), 0);
+  const availMoney = Math.max(0, approvedMoney - spent + returned);
   const goal       = GOAL_DATA.goal;
   S.availMoney      = availMoney;
   S.approvedMinutes = approvedMinutes;
@@ -481,10 +481,10 @@ function renderGoalSection(approvedMoney, approvedMinutes) {
     <div class="stat-card clickable-stat" onclick="openMoneyModal()">
       <div class="stat-label">💰 Available</div>
       <div class="stat-val" style="color:#FFB700">€${availMoney.toFixed(2)}</div>
-      <div class="stat-unit">tap to save or cash out</div>
+      <div class="stat-unit">tap to save for a goal</div>
     </div>
     <div class="stat-card clickable-stat" onclick="openGameModal()">
-      <div class="stat-label">🎮 Game Time</div>
+      <div class="stat-label">✌︎㋡ Game Time</div>
       <div class="stat-val" style="color:#4A7ADB">${approvedMinutes}</div>
       <div class="stat-unit">minutes earned</div>
     </div>
@@ -506,12 +506,18 @@ function renderGoalSection(approvedMoney, approvedMinutes) {
       ${achieved
         ? `<div style="text-align:center;margin-top:14px;font-weight:800;color:#3DBE8A;font-size:17px">🍏 Congratulations! You reached your goal!</div>
            <div style="display:flex;gap:8px;margin-top:12px">
-             <button onclick="openCashoutConfirm()" style="flex:1;padding:12px;background:#3DBE8A;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">💰 Cash Out</button>
+             <button onclick="openGoalCashoutConfirm()" style="flex:1;padding:12px;background:#3DBE8A;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">🎯 Pay Out Goal</button>
              <button onclick="openSetGoalModal(false)" style="flex:1;padding:12px;background:#FFF8E1;color:#B8860B;border:2px dashed #FFB700;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">🎯 New Goal</button>
            </div>`
         : `<button onclick="openSetGoalModal(false)" style="margin-top:10px;padding:0;background:none;border:none;font-size:12px;color:#bbb;cursor:pointer;font-family:inherit;text-decoration:underline">change goal</button>`
       }
     </div>`;
+  }
+
+  if (availMoney > 0) {
+    html += `<button onclick="openCashoutConfirm()" style="width:100%;padding:14px;background:#fff;border:2px solid #3DBE8A;border-radius:14px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;color:#3DBE8A;margin-bottom:12px">
+      💸 Pay Out the Available · €${availMoney.toFixed(2)}<br><span style="font-size:11px;font-weight:400;color:#888">Ask a parent to pay you this amount</span>
+    </button>`;
   }
 
   document.getElementById("goal-section").innerHTML = html;
@@ -605,14 +611,37 @@ async function confirmCashout(amount) {
   } catch(err) { toast("Error: " + err.message, "err"); }
 }
 
+function openGoalCashoutConfirm() {
+  const goal     = GOAL_DATA.goal;
+  const savedAmt = +goal.saved_amount || 0;
+  showModal(`
+    <div style="text-align:center;padding:8px 0">
+      <div style="font-size:48px;margin-bottom:12px">🎯</div>
+      <div style="font-weight:900;font-size:20px;margin-bottom:8px">${esc(goal.goal_name)}</div>
+      <div style="color:#888;font-size:14px;margin-bottom:24px">Ask a parent to give you your goal reward worth <strong style="color:#3DBE8A">€${savedAmt.toFixed(2)}</strong>.</div>
+      <button onclick="confirmGoalCashout()" style="width:100%;padding:14px;background:#3DBE8A;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit">Yes, pay out goal! ✅</button>
+      <button onclick="closeModal()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;font-size:13px;color:#bbb;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  `);
+}
+
+async function confirmGoalCashout() {
+  try {
+    await api({ action: "cashoutGoal", kid_id: S.role });
+    closeModal();
+    toast(`Goal paid out! Ask a parent for your reward 🎯`);
+    loadKid();
+  } catch(err) { toast("Error: " + err.message, "err"); }
+}
+
 function openGameModal() {
   const mins = S.approvedMinutes || 0;
   showModal(`
     <div style="text-align:center;padding:8px 0">
-      <div style="font-size:48px;margin-bottom:12px">🎮</div>
+      <div style="font-size:48px;margin-bottom:12px">✌︎㋡</div>
       <div style="font-weight:900;font-size:22px;margin-bottom:8px">${mins} minutes</div>
       <div style="color:#888;font-size:14px;margin-bottom:20px">You've earned <strong>${mins} minutes</strong> of game time from approved chores.</div>
-      <button onclick="closeModal()" style="width:100%;padding:14px;background:#4A7ADB;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit">Got it! 🎮</button>
+      <button onclick="closeModal()" style="width:100%;padding:14px;background:#4A7ADB;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit">Got it! ✌︎㋡</button>
     </div>
   `);
 }
