@@ -18,6 +18,7 @@ Built in a weekend as a portfolio piece during my career transition into sustain
 A simple family chore tracker. Kids log completed chores, parents approve them, earnings are tracked. Backed by Google Sheets — no server needed.
 专为家庭设计的家务追踪应用。孩子完成家务后记录任务，家长审批并发放零花钱和游戏时间奖励。
 
+
 ## Setup
 
 ### 1. Google Sheets + Apps Script
